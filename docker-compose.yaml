@@ -1,9 +1,8 @@
-version: "3.8"
 
 services:
 
   fastapi:
-    container_name: fastapi_parser
+    container_name: fastapi
     build:
       context: .
     command: sh -c "./src/scripts/fastapi.sh"
@@ -11,3 +10,13 @@ services:
     ports:
       - "2000:2000"
 
+  redis:
+    container_name: redis
+    image: redis:latest
+    ports:
+      - '6378:6379'
+    volumes:
+      - redis:/data
+
+volumes:
+  redis:

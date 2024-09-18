@@ -2,12 +2,11 @@ from redis import from_url  # type: ignore
 
 from typing import Any
 
-from config import settings
 
 
 def get_cache(key: str):
     redis = from_url(
-        f'redis://{settings.redis_settings.host}/{settings.redis_settings.index_db}'
+        f'redis://redis/'
     )
 
     result = redis.get(key)
@@ -17,7 +16,7 @@ def get_cache(key: str):
 
 def set_cache(key: str, value: Any):
     redis = from_url(
-        f'redis://{settings.redis_settings.host}/{settings.redis_settings.index_db}'
+        f'redis://redis/'
     )
 
     redis.set(key, str(value))
@@ -26,7 +25,7 @@ def set_cache(key: str, value: Any):
 
 def clear_cache(key: str):
     redis = from_url(
-        f'redis://{settings.redis_settings.host}/{settings.redis_settings.index_db}'
+        f'redis://redis/'
     )
 
     redis.delete(key)
