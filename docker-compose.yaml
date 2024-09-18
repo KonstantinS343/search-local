@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+
+  fastapi:
+    container_name: fastapi_parser
+    build:
+      context: .
+    command: sh -c "./src/scripts/fastapi.sh"
+
+    ports:
+      - "2000:2000"
+

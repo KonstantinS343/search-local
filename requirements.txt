@@ -1,0 +1,13 @@
+fastapi==0.114.1
+pydantic==2.9.1
+uvicorn==0.30.6
+pydantic_settings==2.5.2
+inotify==0.2.10
+requests==2.32.3
+redis==5.0.8
+torch --index-url https://download.pytorch.org/whl/cu118
+transformers
+chromadb
+chromadb-client==0.5.5.dev0
+
+

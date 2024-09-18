@@ -1,0 +1,6 @@
+**/static
+.env
+
+**/__pycache__
+**/chroma
+venv
