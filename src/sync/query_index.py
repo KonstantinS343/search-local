@@ -12,11 +12,11 @@ class QueryIndexSubsystem:
         self, chroma_db_collection, device, model, tokenizer, max_tokens_on_window, window_stride
     ):
         self._chroma_db_collection = chroma_db_collection
+        self._device = device
         self._model = model
         self._tokenizer = tokenizer
         self._max_tokens_on_window = max_tokens_on_window
         self._window_stride = window_stride
-        self._device = device
 
 
     def _tokenize_text(self, document_text):
@@ -64,6 +64,54 @@ class QueryIndexSubsystem:
         return index_ids
 
 
+    async def _handle_short_query(self, query_embeddings, limit):
+        result = await self._chroma_db_collection.query(
+            query_embeddings=query_embeddings,
+            n_results=limit
+        )
+        return result["ids"][0]  # List if ids
+    
+
+    def _find_best_distance(self, ids_distances_dict, limit):
+        if limit < len(ids_distances_dict):
+            min_distance_list = [None for _ in range(limit)]
+        else:
+            min_distance_list = [None for _ in range(len(ids_distances_dict))]
+        
+        i = 0
+        for index_id, distance in ids_distances_dict.items():
+            if i < limit:
+                min_distance_list[i] = (distance, index_id)  # pair of distance and index id
+            else:
+                max_from_min = max(min_distance_list, key=lambda x: x[0])  # finds maximal distance in the list of minimal distances
+
+                if distance < max_from_min[0]:  # max_from_min is pair (distance, index)
+                    max_from_min_index = min_distance_list.index(max_from_min)
+
+                    min_distance_list[max_from_min_index] = (distance, index_id)
+            i += 1
+        return [dist_index[1] for dist_index in min_distance_list]
+
+
+    async def _handle_long_query(self, query_embeddings, limit):
+        query_result = await self._chroma_db_collection.query(
+            query_embeddings=query_embeddings,
+            n_results=limit * len(query_embeddings),
+            include=["distances"]
+        )
+
+        ids_distances_dict = {}
+        for i in range(len(query_result["ids"])):
+            for j in range(len(query_result["ids"][i])):
+                key = query_result["ids"][i][j]
+                if key in ids_distances_dict:
+                    if ids_distances_dict[key] > query_result["distances"][i][j]:
+                        ids_distances_dict[key] = query_result["distances"][i][j]
+                else:
+                    ids_distances_dict[key] = query_result["distances"][i][j]
+        return self._find_best_distance(ids_distances_dict, limit)
+
+
     async def handle_user_query(self, user_query, limit):
         with torch.no_grad():
             query_tokens = self._tokenize_text(user_query)
@@ -71,19 +119,13 @@ class QueryIndexSubsystem:
                 query_embeddings = self._count_text_embeddings(
                     query_tokens, mean_dim_0=True
                 )
+                return await self._handle_short_query(query_embeddings, limit)
             else:
                 query_embeddings = self._count_text_embeddings(
                     query_tokens, mean_dim_0=False
                 )
-            # TODO different query to db for this cases
-            result = await self._chroma_db_collection.query(
-                query_embeddings=query_embeddings,
-                n_results=limit,
-                include=["ids", "distance"]
-            )
-            print(result)  # TODO remove
-            return result
-
+                return await self._handle_long_query(query_embeddings, limit)
+            
 
     async def reindex_existing_document(
         self, document_path, new_document_text, old_index_ids
