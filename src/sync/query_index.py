@@ -1,5 +1,4 @@
-
-#import chromadb
+# Author: Vodohleb04
 from transformers import BertTokenizerFast, BertModel
 import torch
 import chromadb
@@ -18,21 +17,42 @@ class QueryIndexSubsystem:
         self._max_tokens_on_window = max_tokens_on_window
         self._window_stride = window_stride
 
+    @staticmethod
+    def _get_windows_start_end_mapping(offset_mapping):
+        windows_start_end = [None for _ in range(offset_mapping.shape[0])]
+        for i in range(offset_mapping.shape[0]):
+            # offset_mappin[i][j] is array of len(2)
+            # offset_mapping[i][0] is always [0, 0] and maps to [CLS] special token
+            start = offset_mapping[i][1][0]
+            # offset_mapping[i][j] is always [0, 0] and maps to [SEP] special token if j = (offset_mapping.shape[1] - 1)
+            j = offset_mapping.shape[1] - 2
+            while offset_mapping[i][j][1] == 0:
+                j -= 1  # offset_mapping[i][j] = [0, 0] maps to [PAD], but the part of the text is needed
+            end = offset_mapping[i][j][1]
+            # offset_mapping[i][j][1] is the index of the element after the last element of the window
+            # for the las window offset_mapping[i][j][1] == len(original_text)
+
+            windows_start_end[i] = (start, end)
+        return windows_start_end
 
     def _tokenize_text(self, document_text):
         tokenized_text = self._tokenizer(
             document_text,
             padding="max_length", truncation=True,
             max_length=self._max_tokens_on_window, stride=self._window_stride,
-            return_overflowing_tokens=True,
+            return_overflowing_tokens=True, return_offsets_mapping=True,
             return_tensors='pt', 
         )
-
         tokenized_text.pop("overflow_to_sample_mapping")
 
         for key in tokenized_text.keys():
             tokenized_text[key] = tokenized_text[key].type(torch.int32).to(self._device)
-        return tokenized_text
+
+        windows_start_end = self._get_windows_start_end_mapping(
+            tokenized_text.pop("offset_mapping")
+        )
+
+        return tokenized_text, windows_start_end
 
 
     def _count_text_embeddings(self, document_tokens, mean_dim_0 = False):
@@ -51,17 +71,22 @@ class QueryIndexSubsystem:
 
     async def index_new_document(self, document_path, document_text):
         # document_embeddings is List[List[float]]
-        document_tokens = self._tokenize_text(document_text)
+        document_tokens, windows_start_end = self._tokenize_text(document_text)
         document_embeddings = self._count_text_embeddings(document_tokens)
-        index_ids = [
-            f"{document_path}_window{window_number}"
-            for window_number in range(len(document_embeddings))
-        ]
+
+        index_ids = [None for _ in range(len(document_embeddings))]
+        texts_list = [None for _ in range(len(document_embeddings))]
+        for number in range(len(document_embeddings)):
+            index_ids[number] = f"{document_path}_window{number}"
+
+            texts_list[number] = document_text[
+                windows_start_end[number][0]:windows_start_end[number][1]
+            ]
 
         await self._chroma_db_collection.add(
             embeddings=document_embeddings, ids=index_ids
         )
-        return index_ids
+        return index_ids, texts_list
 
 
     async def _handle_short_query(self, query_embeddings, limit):
@@ -131,31 +156,32 @@ class QueryIndexSubsystem:
         self, document_path, new_document_text, old_index_ids
     ):
         # document_embeddings is List[List[float]]
-        new_document_tokens = self._tokenize_text(new_document_text)
+        new_document_tokens, windows_start_end = self._tokenize_text(new_document_text)
 
         if new_document_tokens["input_ids"].shape[0] < len(old_index_ids):
-            for window_number in range(new_document_tokens["input_ids"].shape[0]):
-                old_index_ids.remove(f"{document_path}_window{window_number}")
+            for number in range(new_document_tokens["input_ids"].shape[0]):
+                old_index_ids.remove(f"{document_path}_window{number}")
 
             await self._chroma_db_collection.delete(ids=old_index_ids)  # removes overflowing windows
             
         new_document_embeddings = self._count_text_embeddings(new_document_tokens)
-        index_ids = [
-            f"{document_path}_window{window_number}"
-            for window_number in range(len(new_document_embeddings))
-        ]
+        index_ids = [None for _ in range(len(new_document_embeddings))]
+        texts_list = [None for _ in range(len(new_document_embeddings))]
+        for number in range(len(new_document_embeddings)):
+            index_ids[number] = f"{document_path}_window{number}"
 
-        await self._chroma_db_collection.upsert(
-            embeddings=new_document_embeddings, ids=index_ids
-        )
-        return index_ids
+            texts_list[number] = new_document_text[
+                windows_start_end[number][0]:windows_start_end[number][1]
+            ]
+
+        await self._chroma_db_collection.upsert(embeddings=new_document_embeddings, ids=index_ids)
+        return index_ids, texts_list
 
     
     async def rename_document(self, new_document_path, old_index_ids):
         document_embeddings = await self._chroma_db_collection.get(
             ids=old_index_ids, include=["embeddings"]
         )
-        print(document_embeddings)  # TODO remove
         new_index_ids = [
             f"{new_document_path}_window{window_number}"
             for window_number in range(len(old_index_ids))
@@ -198,9 +224,8 @@ async def main():
 
     
 
-
-
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
 
 
 
