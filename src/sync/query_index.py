@@ -133,7 +133,7 @@ class QueryIndexSubsystem:
         # document_embeddings is List[List[float]]
         new_document_tokens = self._tokenize_text(new_document_text)
 
-        if new_document_tokens["input_ids"].shape[0] < old_index_ids:
+        if new_document_tokens["input_ids"].shape[0] < len(old_index_ids):
             for window_number in range(new_document_tokens["input_ids"].shape[0]):
                 old_index_ids.remove(f"{document_path}_window{window_number}")
 
