@@ -190,7 +190,7 @@ async def main():
     )
     collection = await client.get_or_create_collection(name="nigga", metadata={"hnsw:space": "l2"})    
         
-    i_s = QueryIndexSubsystem(collection, device, model, tokenizer, 512, 256)
+    i_s = QueryIndexSubsystem(collection, device, model, tokenizer, 128, 64)
     
 
     await i_s.index_new_document("nigga.zs", "Rad dead redemption" * 500)
