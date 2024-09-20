@@ -36,7 +36,7 @@ class QueryIndexSubsystem:
             windows_start_end[i] = (start, end)
         return windows_start_end
 
-    def _tokenize_text(self, document_text):
+    def _tokenize_text(self, document_text, find_snippet_bounds=True):
         tokenized_text = self._tokenizer(
             document_text,
             padding="max_length", truncation=True,
@@ -49,9 +49,12 @@ class QueryIndexSubsystem:
         for key in tokenized_text.keys():
             tokenized_text[key] = tokenized_text[key].type(torch.int32).to(self._device)
 
-        windows_start_end = self._get_windows_start_end_mapping(
-            tokenized_text.pop("offset_mapping")
-        )
+        if find_snippet_bounds:
+            windows_start_end = self._get_windows_start_end_mapping(
+                tokenized_text.pop("offset_mapping")
+            )
+        else:
+            windows_start_end = []
 
         return tokenized_text, windows_start_end
 
@@ -140,7 +143,7 @@ class QueryIndexSubsystem:
 
     async def handle_user_query(self, user_query, limit = 10):
         with torch.no_grad():
-            query_tokens = self._tokenize_text(user_query)
+            query_tokens, _ = self._tokenize_text(user_query, find_snippet_bounds=False)
             if query_tokens["input_ids"].shape[0] <= 3:
                 query_embeddings = self._count_text_embeddings(
                     query_tokens, mean_dim_0=True
