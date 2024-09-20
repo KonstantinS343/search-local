@@ -3,7 +3,7 @@ from transformers import BertTokenizerFast, BertModel
 import torch
 import chromadb
 import asyncio
-from snippet_bounds import SnipetBounds
+from sync.snippet_bounds import SnipetBounds
 
 
 class QueryIndexSubsystem:
@@ -138,7 +138,7 @@ class QueryIndexSubsystem:
         return self._find_best_distance(ids_distances_dict, limit)
 
 
-    async def handle_user_query(self, user_query, limit):
+    async def handle_user_query(self, user_query, limit = 10):
         with torch.no_grad():
             query_tokens = self._tokenize_text(user_query)
             if query_tokens["input_ids"].shape[0] <= 3:
@@ -176,7 +176,7 @@ class QueryIndexSubsystem:
             )
 
         await self._chroma_db_collection.upsert(embeddings=new_document_embeddings, ids=index_ids)
-        return index_ids, snippet_bounds_list
+        return index_ids, old_index_ids, snippet_bounds_list
 
     
     async def rename_document(self, new_document_path, old_index_ids):
@@ -217,6 +217,7 @@ async def main():
     )
     collection = await client.get_or_create_collection(name="nigga", metadata={"hnsw:space": "l2"})    
         
+    i_s = QueryIndexSubsystem(collection, device, model, tokenizer, 128, 64)
     i_s = QueryIndexSubsystem(collection, device, model, tokenizer, 128, 64)
     
 

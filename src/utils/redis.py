@@ -1,31 +1,47 @@
-from redis import from_url  # type: ignore
+from redis.asyncio import from_url  # type: ignore
 
 from typing import Any
 
 
 
-def get_cache(key: str):
-    redis = from_url(
-        f'redis://redis/'
+async def get_by_key(key: str, db: int = 1):
+    redis = await from_url(
+        f'redis://localhost/{db}/'
     )
 
-    result = redis.get(key)
-    redis.close()
-    return result.decode("utf-8") if result else None
+    result = await redis.get(key)
+    await redis.close()
+    return result
 
 
-def set_cache(key: str, value: Any):
-    redis = from_url(
-        f'redis://redis/'
+async def get_values(path: str, db: int = 1):
+    redis = await from_url(
+        f'redis://localhost/{db}/'
+    )
+    
+    my_keys = []
+    
+    for key in await redis.keys():
+        if await redis.get(key) == path:
+            my_keys.append(key)
+
+    await redis.close()
+    print('-----------------------------------------------------------------------------')
+    return my_keys
+
+
+async def set_key(key: str, value: Any, db: int = 1):
+    redis = await from_url(
+        f'redis://localhost/{db}/'
     )
 
-    redis.set(key, str(value))
-    redis.close()
+    await redis.set(key, str(value))
+    await redis.close()
 
 
-def clear_cache(key: str):
-    redis = from_url(
-        f'redis://redis/'
+async def delete_key(key: str, db: int = 1):
+    redis = await from_url(
+        f'redis://localhost/{db}/'
     )
 
-    redis.delete(key)
+    await redis.delete(key)

@@ -15,23 +15,23 @@ class SnipetBounds:
 
     
     @property
-    def snippet_start(self) -> int:
+    def snippet_start(self) -> str:
         """
         snippet = original_text[snippet_start : snippet_end]  (original_text[snippet_end] is excluded from the snippet)
 
         returns: int - index from the original text, that corresponds to the first char of the snippet
         """
-        return self._snippet_start
+        return str(self._snippet_start)
     
 
     @property
-    def snippet_end(self) -> int:
+    def snippet_end(self) -> str:
         """
         snippet = original_text[snippet_start : snippet_end]  (original_text[snippet_end] is excluded from the snippet)
 
         returns: int - index from the original text, that corresponds to the after-last char of the snippet
         """
-        return self._snippet_end
+        return str(self._snippet_end)
 
 
     def __str__(self):
