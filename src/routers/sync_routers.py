@@ -50,10 +50,10 @@ async def sync_delete(file: str):
     It accepts the name of the file name.
     """
 
-    old_indexes = get_values(file.filename.replace('/', '-')[1:])
+    old_indexes = await get_values(file.replace('/', '-')[1:])
     
     for i in old_indexes:
-        await delete_key(i, file.filename.replace('/', '-')[1:])
+        await delete_key(i)
     
     for i in old_indexes:
         await delete_key(i, 2)
@@ -63,8 +63,6 @@ async def sync_delete(file: str):
     file_path = os.path.join('static', file.replace('/', '-')[1:])
     for file_path in glob.glob(file_path+'*'):
         os.remove(file_path)
-        
-        
     
     return file
 

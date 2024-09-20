@@ -9,7 +9,7 @@ async def get_by_key(key: str, db: int = 1):
         f'redis://localhost/{db}/'
     )
 
-    result = await redis.get(key)
+    result = (await redis.get(key)).decode()
     await redis.close()
     return result
 
@@ -22,11 +22,10 @@ async def get_values(path: str, db: int = 1):
     my_keys = []
     
     for key in await redis.keys():
-        if await redis.get(key) == path:
-            my_keys.append(key)
+        if (await redis.get(key)).decode() == path:
+            my_keys.append(key.decode())
 
     await redis.close()
-    print('-----------------------------------------------------------------------------')
     return my_keys
 
 
@@ -43,5 +42,7 @@ async def delete_key(key: str, db: int = 1):
     redis = await from_url(
         f'redis://localhost/{db}/'
     )
+    print(key)
 
     await redis.delete(key)
+    await redis.close()
