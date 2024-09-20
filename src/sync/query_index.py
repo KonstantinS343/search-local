@@ -3,6 +3,7 @@ from transformers import BertTokenizerFast, BertModel
 import torch
 import chromadb
 import asyncio
+from snippet_bounds import SnipetBounds
 
 
 class QueryIndexSubsystem:
@@ -75,18 +76,18 @@ class QueryIndexSubsystem:
         document_embeddings = self._count_text_embeddings(document_tokens)
 
         index_ids = [None for _ in range(len(document_embeddings))]
-        texts_list = [None for _ in range(len(document_embeddings))]
+        snippet_bounds_list = [None for _ in range(len(document_embeddings))]
         for number in range(len(document_embeddings)):
             index_ids[number] = f"{document_path}_window{number}"
 
-            texts_list[number] = document_text[
-                windows_start_end[number][0]:windows_start_end[number][1]
-            ]
+            snippet_bounds_list[number] = SnipetBounds(
+                windows_start_end[number][0], windows_start_end[number][1]
+            )
 
         await self._chroma_db_collection.add(
             embeddings=document_embeddings, ids=index_ids
         )
-        return index_ids, texts_list
+        return index_ids, snippet_bounds_list
 
 
     async def _handle_short_query(self, query_embeddings, limit):
@@ -166,16 +167,16 @@ class QueryIndexSubsystem:
             
         new_document_embeddings = self._count_text_embeddings(new_document_tokens)
         index_ids = [None for _ in range(len(new_document_embeddings))]
-        texts_list = [None for _ in range(len(new_document_embeddings))]
+        snippet_bounds_list = [None for _ in range(len(new_document_embeddings))]
         for number in range(len(new_document_embeddings)):
             index_ids[number] = f"{document_path}_window{number}"
 
-            texts_list[number] = new_document_text[
-                windows_start_end[number][0]:windows_start_end[number][1]
-            ]
+            snippet_bounds_list[number] = SnipetBounds(
+                windows_start_end[number][0], windows_start_end[number][1]
+            )
 
         await self._chroma_db_collection.upsert(embeddings=new_document_embeddings, ids=index_ids)
-        return index_ids, texts_list
+        return index_ids, snippet_bounds_list
 
     
     async def rename_document(self, new_document_path, old_index_ids):
