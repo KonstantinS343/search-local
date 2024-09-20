@@ -41,7 +41,7 @@ class QueryIndexSubsystem:
             document_text,
             padding="max_length", truncation=True,
             max_length=self._max_tokens_on_window, stride=self._window_stride,
-            return_overflowing_tokens=True, return_offsets_mapping=True,
+            return_overflowing_tokens=True, return_offsets_mapping=find_snippet_bounds,
             return_tensors='pt', 
         )
         tokenized_text.pop("overflow_to_sample_mapping")
