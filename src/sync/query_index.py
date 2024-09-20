@@ -27,7 +27,7 @@ class QueryIndexSubsystem:
             start = offset_mapping[i][1][0]
             # offset_mapping[i][j] is always [0, 0] and maps to [SEP] special token if j = (offset_mapping.shape[1] - 1)
             j = offset_mapping.shape[1] - 2
-            while offset_mapping[i][j][1] == 0:
+            while offset_mapping[i][j][1] == 0 and j > 0:  # j == 0 is maps to [CLS] special token
                 j -= 1  # offset_mapping[i][j] = [0, 0] maps to [PAD], but the part of the text is needed
             end = offset_mapping[i][j][1]
             # offset_mapping[i][j][1] is the index of the element after the last element of the window
