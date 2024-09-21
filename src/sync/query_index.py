@@ -84,7 +84,7 @@ class QueryIndexSubsystem:
             index_ids[number] = f"{document_path}_window{number}"
 
             snippet_bounds_list[number] = SnipetBounds(
-                windows_start_end[number][0], windows_start_end[number][1]
+                windows_start_end[number][0].item(), windows_start_end[number][1].item()
             )
 
         await self._chroma_db_collection.add(
@@ -175,7 +175,7 @@ class QueryIndexSubsystem:
             index_ids[number] = f"{document_path}_window{number}"
 
             snippet_bounds_list[number] = SnipetBounds(
-                windows_start_end[number][0], windows_start_end[number][1]
+                windows_start_end[number][0].item(), windows_start_end[number][1].item()
             )
 
         await self._chroma_db_collection.upsert(embeddings=new_document_embeddings, ids=index_ids)
