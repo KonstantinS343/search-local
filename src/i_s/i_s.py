@@ -16,7 +16,8 @@ async def get_subsystem():
     model = model.to(device)
 
     client = await chromadb.AsyncHttpClient(
-        host="chromadb", port=8000
+        host="localhost", port=8100
+        # host="chromadb", port=8000
     )
     collection = await client.get_or_create_collection(name="files", metadata={"hnsw:space": "l2"})    
         

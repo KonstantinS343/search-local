@@ -21,7 +21,7 @@ class SnipetBounds:
 
         returns: int - index from the original text, that corresponds to the first char of the snippet
         """
-        return str(self._snippet_start)
+        return str(self._snippet_start.item())
     
 
     @property
@@ -31,7 +31,7 @@ class SnipetBounds:
 
         returns: int - index from the original text, that corresponds to the after-last char of the snippet
         """
-        return str(self._snippet_end)
+        return str(self._snippet_end.item())
 
 
     def __str__(self):
