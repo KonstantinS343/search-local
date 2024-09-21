@@ -6,7 +6,7 @@ from typing import Any
 
 async def get_by_key(key: str, db: int = 1):
     redis = await from_url(
-        f'redis://localhost/{db}/'
+        f'redis://redis/{db}/'
     )
 
     result = (await redis.get(key)).decode()
@@ -16,7 +16,7 @@ async def get_by_key(key: str, db: int = 1):
 
 async def get_values(path: str, db: int = 1):
     redis = await from_url(
-        f'redis://localhost/{db}/'
+        f'redis://redis/{db}/'
     )
     
     my_keys = []
@@ -31,7 +31,7 @@ async def get_values(path: str, db: int = 1):
 
 async def set_key(key: str, value: Any, db: int = 1):
     redis = await from_url(
-        f'redis://localhost/{db}/'
+        f'redis://redis/{db}/'
     )
 
     await redis.set(key, str(value))
@@ -40,7 +40,7 @@ async def set_key(key: str, value: Any, db: int = 1):
 
 async def delete_key(key: str, db: int = 1):
     redis = await from_url(
-        f'redis://localhost/{db}/'
+        f'redis://redis/{db}/'
     )
     print(key)
 
