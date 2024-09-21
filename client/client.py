@@ -65,7 +65,7 @@ def _main():
     with open('client/server', 'r') as file:
         address = file.read()
     
-    config_files = requests.get('http://' + address + f'/config/')
+    config_files = requests.get('http://' + address + f':2000/config/')
     
     if config_files.status_code != 200:
         print(config_files.content)

@@ -42,7 +42,6 @@ async def delete_key(key: str, db: int = 1):
     redis = await from_url(
         f'redis://localhost/{db}/'
     )
-    print(key)
 
     await redis.delete(key)
     await redis.close()

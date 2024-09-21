@@ -16,27 +16,29 @@ async def sync(file: File):
     It accepts the name of the file and its contents.
     """
     
-    old_indexes = await get_values(file.filename.replace('/', '-')[1:])
+    if file.content:
     
-    if old_indexes:
-        indexes, indexes_to_delete, snippets = await i_s.reindex_existing_document(file.filename.replace('/', '-')[1:], file.content, old_indexes)
+        old_indexes = await get_values(file.filename.replace('/', '-')[1:])
         
-        for i in indexes_to_delete:
-            await delete_key(i)
+        if old_indexes:
+            indexes, indexes_to_delete, snippets = await i_s.reindex_existing_document(file.filename.replace('/', '-')[1:], file.content, old_indexes)
+            
+            for i in indexes_to_delete:
+                await delete_key(i)
+            
+            for i in indexes_to_delete:
+                await delete_key(i, 2)
+                
+            for id, snippet in zip(indexes, snippets):
+                await set_key(id, snippet.snippet_start + ' ' + snippet.snippet_end, 2)
+        else:
+            indexes, snippets = await i_s.index_new_document(file.filename.replace('/', '-')[1:], file.content)
         
-        for i in indexes_to_delete:
-            await delete_key(i, 2)
+        for i in indexes:
+            await set_key(i, file.filename.replace('/', '-')[1:])
             
         for id, snippet in zip(indexes, snippets):
             await set_key(id, snippet.snippet_start + ' ' + snippet.snippet_end, 2)
-    else:
-        indexes, snippets = await i_s.index_new_document(file.filename.replace('/', '-')[1:], file.content)
-    
-    for i in indexes:
-        await set_key(i, file.filename.replace('/', '-')[1:])
-        
-    for id, snippet in zip(indexes, snippets):
-        await set_key(id, snippet.snippet_start + ' ' + snippet.snippet_end, 2)
 
     file_path = os.path.join('static', file.filename.replace('/', '-')[1:])
     with open(file_path, "w") as buffer:
