@@ -16,7 +16,7 @@ def watch_files(file: str, address: str):
         (_, type_names, path, filename) = event
         
         if 'IN_MOVED_FROM' in type_names:
-            requests.delete('http://' + address + '/sync/delete/', params={'file': os.path.join(path, filename)})
+            requests.delete(address + '/sync/delete/', params={'file': os.path.join(path, filename)})
                 
         
         if 'IN_CREATE' in type_names:
@@ -35,7 +35,7 @@ def watch_files(file: str, address: str):
                     file_content = f.read()
             except FileNotFoundError:
                 continue
-            requests.post('http://' + address + '/sync/', json={'filename': path, 'content': file_content})
+            requests.post(address + '/sync/', json={'filename': path, 'content': file_content})
 
 
 def validate_source(folders: Sequence[str], address: str):
@@ -52,7 +52,7 @@ def validate_source(folders: Sequence[str], address: str):
                 for file in files:
                     with open(os.path.join(root, file), 'r') as f:
                         file_content = f.read()
-                    requests.post('http://' + address + '/sync/', json={'filename': os.path.join(root, file), 'content': file_content})
+                    requests.post(address + '/sync/', json={'filename': os.path.join(root, file), 'content': file_content})
                     valid_folders.add(os.path.join(root, file))
                 for dir in dirs:
                     valid_folders.add(os.path.join(root, dir))
@@ -65,7 +65,7 @@ def _main():
     with open('client/server', 'r') as file:
         address = file.read()
     
-    config_files = requests.get('http://' + address + f':2000/config/')
+    config_files = requests.get(address + f'/config/')
     
     if config_files.status_code != 200:
         print(config_files.content)
