@@ -19,9 +19,9 @@ async def get_subsystem():
         host="localhost", port=8100
         # host="chromadb", port=8000
     )
-    collection = await client.get_or_create_collection(name="files", metadata={"hnsw:space": "l2"})    
+    collection = await client.get_or_create_collection(name="files", metadata={"hnsw:space": "cosine"})    
         
     return collection, device, model, tokenizer
 
 
-i_s = QueryIndexSubsystem(*asyncio.run(get_subsystem()), 128, 64)
+i_s = QueryIndexSubsystem(*asyncio.run(get_subsystem()), 32, 16)

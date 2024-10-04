@@ -24,7 +24,7 @@ async def post_config(config: Sequence[str]) -> Response:
         for item in config:
             file.writelines([item, '\n'])
     
-    return Response(content='OK', status_code=201, ia_type='text/plain')
+    return Response(content='OK', status_code=201, media_type='text/plain')
 
 @config_router.get('/')
 async def get_config() -> Response:

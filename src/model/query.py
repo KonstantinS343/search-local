@@ -3,5 +3,5 @@ from pydantic import BaseModel
 
 class Query(BaseModel):
     query: str
-    limit: int
+    limit: int = 1
     
